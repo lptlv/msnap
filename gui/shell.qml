@@ -219,6 +219,10 @@ PanelWindow {
   }
 
   function executeRecording() {
+    if (isRecordingActive) {
+      Quickshell.execDetached([Config.mcastPath, "--toggle"]);
+      return;
+    }
     const args = buildCommandArgs("mcast", false);
     args.push("--toggle");
     Quickshell.execDetached(args);
@@ -227,6 +231,9 @@ PanelWindow {
   }
 
   function stopRecording() {
+    if (!isRecordingActive) {
+      return;
+    }
     Quickshell.execDetached([Config.mcastPath, "--toggle"]);
     isRecordingActive = false;
     if (!root.visible) {
