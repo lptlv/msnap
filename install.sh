@@ -11,14 +11,12 @@ git clone --depth=1 "$REPO" "$TMP"
 
 echo "Installing binaries to $BIN_DIR…"
 mkdir -p "$BIN_DIR"
-chmod +x "$TMP/mcast/mcast" "$TMP/mshot/mshot"
-cp "$TMP/mcast/mcast" "$BIN_DIR/mcast"
-cp "$TMP/mshot/mshot" "$BIN_DIR/mshot"
+chmod +x "$TMP/cli/msnap"
+cp "$TMP/cli/msnap" "$BIN_DIR/msnap"
 
 echo "Installing configs to $CONFIG_DIR…"
 mkdir -p "$CONFIG_DIR"
-cp -n "$TMP/mcast/mcast.conf" "$CONFIG_DIR/"
-cp -n "$TMP/mshot/mshot.conf" "$CONFIG_DIR/"
+cp -n "$TMP/cli/msnap.conf" "$CONFIG_DIR/"
 
 echo "Installing gui to $CONFIG_DIR/gui"
 mkdir -p "$CONFIG_DIR/gui"
@@ -36,12 +34,22 @@ rm -rf "$TMP"
 echo
 
 echo "Done!"
-echo "✔ mcast, mshot → $BIN_DIR"
-echo "✔ configs → $CONFIG_DIR"
+echo "✔ msnap (unified CLI) → $BIN_DIR"
+echo "✔ msnap.conf → $CONFIG_DIR"
 echo "✔ gui → $CONFIG_DIR/gui"
 
+echo
 echo "Launch gui with:"
 echo "    qs -p $CONFIG_DIR/gui"
 echo
 echo "Make sure $BIN_DIR is in your PATH:"
 echo "    export PATH=\"$BIN_DIR:\$PATH\""
+echo
+echo "Usage:"
+echo "    msnap shot [OPTIONS]      # Take a screenshot"
+echo "    msnap cast [OPTIONS]      # Record screen"
+echo
+echo "For detailed help:"
+echo "    msnap --help"
+echo "    msnap shot --help"
+echo "    msnap cast --help"
