@@ -65,20 +65,43 @@ root_command() {
       --actions-on-enter save-to-file --early-exit --disable-notifications
   fi
 
-  notify_title="Screenshot saved"
+  notify_saved() {
+    local fp="$1"
+    local msg="$2"
+    local notify_actions=(-A "open=Open File" -A "folder=Open Folder")
+    [[ ! ${args[--annotate]} ]] && notify_actions+=(-A "annotate=Annotate")
+
+    action=$(notify-send "Screenshot saved" "$msg" \
+      -i "$fp" -a mshot \
+      "${notify_actions[@]}")
+
+    case "$action" in
+      open)
+        xdg-open "$fp"
+        ;;
+      folder)
+        xdg-open "$(dirname "$fp")"
+        ;;
+      annotate)
+        satty --filename "$fp" --output-filename "$fp" \
+          --actions-on-enter save-to-file --early-exit --disable-notifications
+        ;;
+    esac
+  }
 
   if [[ ${args[--only-copy]} ]]; then
     wl-copy < "$filepath"
-    message="Image copied to the clipboard."
-    notify_title="Screenshot captured"
-  elif [[ ! ${args[--no-copy]} ]]; then
-    wl-copy < "$filepath"
-    message="Image saved in <i>${filepath}</i> and copied to the clipboard."
+    notify-send "Screenshot captured" "Image copied to the clipboard." \
+      -i "$filepath" -a mshot
   else
-    message="Image saved in <i>${filepath}</i>."
+    if [[ ! ${args[--no-copy]} ]]; then
+      wl-copy < "$filepath"
+      message="Image saved in <i>${filepath}</i> and copied to the clipboard."
+    else
+      message="Image saved in <i>${filepath}</i>."
+    fi
+    notify_saved "$filepath" "$message"
   fi
-
-  notify-send "$notify_title" "${message}" -i "${filepath}" -a mshot
 
 }
 
