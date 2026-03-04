@@ -28,10 +28,10 @@ notify_saved() {
 
   case "$action" in
     open)
-      xdg-open "$fp" >/dev/null 2>&1
+      xdg-open "$fp" >/dev/null 2>&1 &
       ;;
     folder)
-      xdg-open "$(dirname "$fp")" >/dev/null 2>&1
+      xdg-open "$(dirname "$fp")" >/dev/null 2>&1 &
       ;;
     annotate)
       satty --filename "$fp" --output-filename "$fp" \
