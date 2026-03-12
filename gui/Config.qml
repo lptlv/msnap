@@ -27,8 +27,31 @@ Singleton {
 
   // Paths - centralized configuration
   readonly property string homePath: Quickshell.env("HOME")
-  readonly property string configPath: homePath + "/.config/msnap/gui.conf"
-  readonly property string msnapPath: homePath + "/.local/bin/msnap"
+
+  readonly property string xdgConfigHome: {
+    var val = Quickshell.env("XDG_CONFIG_HOME");
+    return (val !== "" && val !== null) ? val : (homePath + "/.config");
+  }
+
+  readonly property string xdgConfigDirs: {
+    var val = Quickshell.env("XDG_CONFIG_DIRS");
+    return (val !== "" && val !== null) ? val : "/etc/xdg";
+  }
+
+  readonly property string xdgBinHome: {
+    var val = Quickshell.env("XDG_BIN_HOME");
+    return (val !== "" && val !== null) ? val : (homePath + "/.local/bin");
+  }
+
+  readonly property var configSearchDirs: {
+    var dirs = xdgConfigDirs.split(":").filter(function(d) { return d.length > 0; });
+    return [xdgConfigHome].concat(dirs);
+  }
+
+  property int _configSearchIndex: 0
+  property string configPath: configSearchDirs[0] + "/msnap/gui.conf"
+
+  readonly property string msnapPath: xdgBinHome + "/msnap"
   readonly property string pidFilePath: "/tmp/msnap-cast.pid"
 
   // UI Constants
@@ -43,8 +66,20 @@ Singleton {
     id: configFile
     path: root.configPath
     watchChanges: true
-    onTextChanged: root.loadConfig(text())
-    onLoadFailed: reloadTimer.start()
+    onTextChanged: {
+      root._configSearchIndex = 0
+      root.loadConfig(text())
+    }
+    onLoadFailed: {
+      root._configSearchIndex++;
+      if (root._configSearchIndex < root.configSearchDirs.length) {
+        root.configPath = root.configSearchDirs[root._configSearchIndex] + "/msnap/gui.conf";
+      } else {
+        root._configSearchIndex = 0;
+        root.configPath = root.configSearchDirs[0] + "/msnap/gui.conf";
+        reloadTimer.start();
+      }
+    }
   }
 
   Timer {
