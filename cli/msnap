@@ -28,6 +28,7 @@ msnap_usage() {
   printf "%s\n" "Commands:"
   printf "  %s   Take a screenshot\n" "shot"
   printf "  %s   Record the screen\n" "cast"
+  printf "  %s   Launch the graphical interface\n" "gui "
   echo
 
   # :command.long_usage
@@ -183,6 +184,28 @@ msnap_cast_usage() {
     printf "  %s\n" "--mic-device, -M DEVICE"
     printf "    Microphone device (default - default_input)\n"
     echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+msnap_gui_usage() {
+  printf "msnap gui - Launch the graphical interface\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  msnap gui\n"
+  printf "  msnap gui --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
 
     # :command.usage_fixed_flags
     printf "  %s\n" "--help, -h"
@@ -546,6 +569,41 @@ msnap_cast_command() {
 
 }
 
+# :command.function
+msnap_gui_command() {
+
+  # src/gui_command.sh
+  if ! command -v qs &>/dev/null; then
+    echo "Error: Quickshell (qs) is required for the GUI." >&2
+    echo "Install quickshell, or use 'msnap shot' / 'msnap cast' for CLI-only operation." >&2
+    exit 1
+  fi
+
+  INJECTED_GUI_PATH="@GUI_PATH@"
+  USER_GUI_PATH="${XDG_DATA_HOME:-$HOME/.local/share}/msnap/gui"
+  SYS_GUI_PATH="/usr/share/msnap/gui"
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+  LOCAL_GUI_PATH="$REPO_ROOT/gui"
+
+  if [[ -d "$INJECTED_GUI_PATH" ]]; then
+    GUI_DIR="$INJECTED_GUI_PATH"
+  elif [[ -d "$USER_GUI_PATH" ]]; then
+    GUI_DIR="$USER_GUI_PATH"
+  elif [[ -d "$SYS_GUI_PATH" ]]; then
+    GUI_DIR="$SYS_GUI_PATH"
+  elif [[ -d "$LOCAL_GUI_PATH" ]]; then
+    GUI_DIR="$LOCAL_GUI_PATH"
+  else
+    echo "Error: Cannot find msnap GUI assets." >&2
+    echo "Expected at $USER_GUI_PATH or $SYS_GUI_PATH" >&2
+    exit 1
+  fi
+
+  exec qs -p "$GUI_DIR"
+
+}
+
 # :command.parse_requirements
 parse_requirements() {
   local key
@@ -589,6 +647,13 @@ parse_requirements() {
       action="cast"
       shift
       msnap_cast_parse_requirements "$@"
+      shift $#
+      ;;
+
+    gui)
+      action="gui"
+      shift
+      msnap_gui_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1063,6 +1128,67 @@ msnap_cast_parse_requirements() {
 
 }
 
+# :command.parse_requirements
+msnap_gui_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        msnap_gui_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.dependencies_filter
+  missing_deps=
+  # :dependency.filter
+  if ! command -v qs >/dev/null 2>&1; then
+    printf "missing dependency: qs\n" >&2
+    missing_deps=1
+  else
+    deps['qs']="$(command -v qs | head -n1)"
+  fi
+
+  if [[ -n $missing_deps ]]; then
+    exit 1
+  fi
+
+  # :command.command_filter
+  action="gui"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 # :command.initialize
 initialize() {
   declare -g version="0.1.0"
@@ -1107,6 +1233,7 @@ run() {
   case "$action" in
     "shot") msnap_shot_command ;;
     "cast") msnap_cast_command ;;
+    "gui") msnap_gui_command ;;
   esac
 }
 

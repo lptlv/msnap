@@ -19,13 +19,14 @@ build:
 	@echo "Generating files..."
 	sed "s|@GUI_PATH@|$(DATADIR)/msnap/gui|g" assets/msnap.desktop.in > msnap.desktop
 	sed "s|@BIN_PATH@|$(BINDIR)/msnap|g" gui/Config.qml > Config.qml.build
+	sed "s|@GUI_PATH@|$(DATADIR)/msnap/gui|g" cli/msnap > msnap.build
 
 install: build
 	@echo "Installing msnap..."
 	
 	# Install CLI binary
 	install -d $(DESTDIR)$(BINDIR)
-	install -m755 cli/msnap $(DESTDIR)$(BINDIR)/msnap
+	install -m755 msnap.build $(DESTDIR)$(BINDIR)/msnap
 	
 	# Install Config files
 	install -d $(CONFIG_DIR)
@@ -54,4 +55,4 @@ uninstall:
 	rm -f $(ICON_DIR)/msnap.svg
 
 clean:
-	rm -f msnap.desktop Config.qml.build
+	rm -f msnap.desktop Config.qml.build msnap.build

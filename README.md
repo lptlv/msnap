@@ -97,8 +97,7 @@ msnap cast [OPTIONS]   # record the screen
 Launch from your application launcher, or directly:
 
 ```sh
-qs -p /usr/share/msnap/gui      # system install
-qs -p ~/.local/share/msnap/gui  # user install
+msnap gui
 ```
 
 ### Keyboard shortcuts
@@ -167,7 +166,7 @@ msnap follows the [XDG Base Directory Specification](https://specifications.free
 Example keybinds for mango:
 
 ```ini
-bind=none,Print,spawn,qs -p /usr/share/msnap/gui
+bind=none,Print,spawn,msnap gui
 bind=SHIFT,Print,spawn_shell,msnap shot --region
 bind=ALT,Print,spawn_shell,msnap cast --toggle --region
 ```

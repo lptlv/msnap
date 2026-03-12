@@ -94,3 +94,8 @@ commands:
     short: -M
     arg: device
     help: Microphone device (default - default_input)
+
+- name: gui
+  help: Launch the graphical interface
+  dependencies:
+    - qs
