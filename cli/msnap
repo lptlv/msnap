@@ -579,28 +579,40 @@ msnap_gui_command() {
     exit 1
   fi
 
-  INJECTED_GUI_PATH="@GUI_PATH@"
   USER_GUI_PATH="${XDG_DATA_HOME:-$HOME/.local/share}/msnap/gui"
   SYS_GUI_PATH="/usr/share/msnap/gui"
+  INJECTED_GUI_PATH="@GUI_PATH@"
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   REPO_ROOT="$(dirname "$SCRIPT_DIR")"
   LOCAL_GUI_PATH="$REPO_ROOT/gui"
 
-  if [[ -d "$INJECTED_GUI_PATH" ]]; then
-    GUI_DIR="$INJECTED_GUI_PATH"
+  if [[ "$INJECTED_GUI_PATH" != "@"*GUI_PATH@ && -d "$INJECTED_GUI_PATH" ]]; then
+    TARGET_DIR="$INJECTED_GUI_PATH"
   elif [[ -d "$USER_GUI_PATH" ]]; then
-    GUI_DIR="$USER_GUI_PATH"
+    TARGET_DIR="$USER_GUI_PATH"
   elif [[ -d "$SYS_GUI_PATH" ]]; then
-    GUI_DIR="$SYS_GUI_PATH"
+    TARGET_DIR="$SYS_GUI_PATH"
   elif [[ -d "$LOCAL_GUI_PATH" ]]; then
-    GUI_DIR="$LOCAL_GUI_PATH"
+    TARGET_DIR="$LOCAL_GUI_PATH"
   else
     echo "Error: Cannot find msnap GUI assets." >&2
     echo "Expected at $USER_GUI_PATH or $SYS_GUI_PATH" >&2
     exit 1
   fi
 
-  exec qs -p "$GUI_DIR"
+  XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
+  config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+  export MSNAP_GUI_CONFIG=""
+
+  IFS=':' read -ra _sys_dirs <<< "$XDG_CONFIG_DIRS"
+  for dir in "$config_home" "${_sys_dirs[@]}"; do
+    if [[ -f "$dir/msnap/gui.conf" ]]; then
+      export MSNAP_GUI_CONFIG="$dir/msnap/gui.conf"
+      break
+    fi
+  done
+
+  exec qs -p "$TARGET_DIR"
 
 }
 

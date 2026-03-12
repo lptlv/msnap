@@ -25,31 +25,8 @@ Singleton {
   // Behavior
   property bool quickCapture: false
 
-  // Paths - centralized configuration
+  // Paths
   readonly property string homePath: Quickshell.env("HOME")
-
-  readonly property string xdgConfigHome: {
-    var val = Quickshell.env("XDG_CONFIG_HOME");
-    return (val !== "" && val !== null) ? val : (homePath + "/.config");
-  }
-
-  readonly property string xdgConfigDirs: {
-    var val = Quickshell.env("XDG_CONFIG_DIRS");
-    return (val !== "" && val !== null) ? val : "/etc/xdg";
-  }
-
-  readonly property string xdgBinHome: {
-    var val = Quickshell.env("XDG_BIN_HOME");
-    return (val !== "" && val !== null) ? val : (homePath + "/.local/bin");
-  }
-
-  readonly property var configSearchDirs: {
-    var dirs = xdgConfigDirs.split(":").filter(function(d) { return d.length > 0; });
-    return [xdgConfigHome].concat(dirs);
-  }
-
-  property int _configSearchIndex: 0
-  property string configPath: configSearchDirs[0] + "/msnap/gui.conf"
 
   // The path to the msnap binary (injected at build time by the Makefile)
   // Fallback to "msnap" so it works via $PATH during local development testing
@@ -65,31 +42,15 @@ Singleton {
   readonly property int defaultSpacing: 6
   readonly property int defaultBorderRadius: 8
 
+  property string configPath: Quickshell.env("MSNAP_GUI_CONFIG")
+
   FileView {
     id: configFile
-    path: root.configPath
+    path: root.configPath !== "" ? root.configPath : "/dev/null"
     watchChanges: true
     onTextChanged: {
-      root._configSearchIndex = 0
       root.loadConfig(text())
     }
-    onLoadFailed: {
-      root._configSearchIndex++;
-      if (root._configSearchIndex < root.configSearchDirs.length) {
-        root.configPath = root.configSearchDirs[root._configSearchIndex] + "/msnap/gui.conf";
-      } else {
-        root._configSearchIndex = 0;
-        root.configPath = root.configSearchDirs[0] + "/msnap/gui.conf";
-        reloadTimer.start();
-      }
-    }
-  }
-
-  Timer {
-    id: reloadTimer
-    interval: 1000
-    repeat: false
-    onTriggered: configFile.reload()
   }
 
   function loadConfig(data) {
