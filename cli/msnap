@@ -443,6 +443,10 @@ msnap_shot_command() {
   [[ $use_pointer ]] && cmd+=(-c)
 
   if [[ ${args[--window]} ]]; then
+    if ! command -v mmsg >/dev/null 2>&1; then
+      echo "missing dependency: mmsg (required for --window)" >&2
+      exit 1
+    fi
     geometry=$(mmsg -x | awk '/x / {x=$3} /y / {y=$3} /width / {w=$3} /height / {h=$3} END {print x","y" "w"x"h}')
     if [[ -z "$geometry" ]]; then
       echo "Error: No active window found or mmsg failed." >&2
@@ -454,6 +458,10 @@ msnap_shot_command() {
   fi
 
   if [[ ${args[--freeze]} ]]; then
+    if ! command -v wayfreeze >/dev/null 2>&1; then
+      echo "missing dependency: wayfreeze (required for --freeze)" >&2
+      exit 1
+    fi
     wayfreeze_cmd=(wayfreeze)
     [[ -z $use_pointer ]] && wayfreeze_cmd+=(--hide-cursor)
     if [[ ${args[--region]} ]]; then
@@ -758,22 +766,6 @@ msnap_shot_parse_requirements() {
     missing_deps=1
   else
     deps['notify-send']="$(command -v notify-send | head -n1)"
-  fi
-
-  # :dependency.filter
-  if ! command -v mmsg >/dev/null 2>&1; then
-    printf "missing dependency: mmsg\n" >&2
-    missing_deps=1
-  else
-    deps['mmsg']="$(command -v mmsg | head -n1)"
-  fi
-
-  # :dependency.filter
-  if ! command -v wayfreeze >/dev/null 2>&1; then
-    printf "missing dependency: wayfreeze\n" >&2
-    missing_deps=1
-  else
-    deps['wayfreeze']="$(command -v wayfreeze | head -n1)"
   fi
 
   if [[ -n $missing_deps ]]; then
@@ -1209,25 +1201,14 @@ initialize() {
   # src/initialize.sh
   XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
   config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
-  config_file=""
 
-  IFS=':' read -ra _sys_dirs <<< "$XDG_CONFIG_DIRS"
-  for dir in "$config_home" "${_sys_dirs[@]}"; do
+  IFS=':' read -ra _dirs <<< "$config_home:$XDG_CONFIG_DIRS"
+  for dir in "${_dirs[@]}"; do
     if [[ -f "$dir/msnap/msnap.conf" ]]; then
-      config_file="$dir/msnap/msnap.conf"
+      ini_load "$dir/msnap/msnap.conf"
       break
     fi
   done
-
-  if [[ -z "$config_file" ]]; then
-    mkdir -p "$config_home/msnap"
-    cp "./msnap.conf" "$config_home/msnap/msnap.conf"
-    config_file="$config_home/msnap/msnap.conf"
-  fi
-
-  CONFIG_FILE="$config_file"
-  ini_load "$config_file"
-
 }
 
 # :command.run
