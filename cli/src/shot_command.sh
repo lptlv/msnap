@@ -37,19 +37,24 @@ if [[ ${args[--freeze]} ]]; then
   fi
   wayfreeze_cmd=(wayfreeze)
   [[ -z $use_pointer ]] && wayfreeze_cmd+=(--hide-cursor)
-  trap 'kill $wayfreeze_pid 2>/dev/null || true' EXIT
+  trap 'kill $wayfreeze_pid 2>/dev/null || true; rm -f "$pipe"' EXIT
+  pipe=$(mktemp -u).fifo
+  mkfifo "$pipe"
   if [[ ${args[--region]} ]]; then
-    "${wayfreeze_cmd[@]}" & wayfreeze_pid=$!
-    sleep .1
+    "${wayfreeze_cmd[@]}" --after-freeze-cmd "echo > $pipe" &
+    wayfreeze_pid=$!
+    read -r < "$pipe"
     geometry=$(slurp -d)
     [[ -z "$geometry" ]] && exit 1
     "${cmd[@]}" -g "$geometry" "$filepath"
   else
-    "${wayfreeze_cmd[@]}" & wayfreeze_pid=$!
-    sleep .1
+    "${wayfreeze_cmd[@]}" --after-freeze-cmd "echo > $pipe" &
+    wayfreeze_pid=$!
+    read -r < "$pipe"
     "${cmd[@]}" "$filepath"
   fi
   kill $wayfreeze_pid 2>/dev/null || true
+  rm -f "$pipe"
   trap - EXIT
 elif [[ ${args[--region]} ]]; then
   geometry=$(slurp -d)
