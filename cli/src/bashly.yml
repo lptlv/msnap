@@ -70,6 +70,7 @@ commands:
   - long: --toggle
     short: -t
     help: Toggle recording on/off
+    required: true
   - long: --output
     short: -o
     arg: directory
