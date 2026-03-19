@@ -4,6 +4,7 @@ BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
 SYSCONFDIR ?= /etc/xdg
 LOCALSTATEDIR ?= /var/lib
+STATEDIR ?= $(LOCALSTATEDIR)
 ICON_PATH ?= $(DATADIR)/icons/hicolor/scalable/apps/msnap.svg
 
 # Installation Directories
@@ -14,7 +15,7 @@ DESKTOP_DIR = $(DESTDIR)$(DATADIR)/applications
 CONFIG_DIR = $(DESTDIR)$(SYSCONFDIR)/msnap
 
 # Manifest
-MANIFEST = $(DESTDIR)$(LOCALSTATEDIR)/msnap/.manifest
+MANIFEST = $(DESTDIR)$(STATEDIR)/msnap/.manifest
 
 .PHONY: all install uninstall clean
 
@@ -52,27 +53,15 @@ install: build
 	install -m644 assets/icons/msnap.svg $(ICON_DIR)/msnap.svg
 
 	# Write manifest
-	@install -d $(DESTDIR)$(LOCALSTATEDIR)/msnap
-	@printf '%s\n' \
-		"$(DESTDIR)$(BINDIR)/msnap" \
-		"$(CONFIG_DIR)/msnap.conf" \
-		"$(CONFIG_DIR)/gui.conf" \
-		"$(GUI_DIR)/shell.qml" \
-		"$(GUI_DIR)/Config.qml" \
-		"$(GUI_DIR)/RegionSelector.qml" \
-		"$(GUI_DIR)/Icon.qml" \
-		"$(GUI_DIR)/icons/app-window.svg" \
-		"$(GUI_DIR)/icons/camera.svg" \
-		"$(GUI_DIR)/icons/crop.svg" \
-		"$(GUI_DIR)/icons/device-desktop.svg" \
-		"$(GUI_DIR)/icons/microphone.svg" \
-		"$(GUI_DIR)/icons/mouse.svg" \
-		"$(GUI_DIR)/icons/pencil.svg" \
-		"$(GUI_DIR)/icons/player-record.svg" \
-		"$(GUI_DIR)/icons/volume.svg" \
-		"$(DESKTOP_DIR)/msnap.desktop" \
-		"$(ICON_DIR)/msnap.svg" \
-		> $(MANIFEST)
+	@install -d $(DESTDIR)$(STATEDIR)/msnap
+	@{ \
+		echo "$(DESTDIR)$(BINDIR)/msnap"; \
+		find $(GUI_DIR) -type f | sort; \
+		echo "$(CONFIG_DIR)/msnap.conf"; \
+		echo "$(CONFIG_DIR)/gui.conf"; \
+		echo "$(DESKTOP_DIR)/msnap.desktop"; \
+		echo "$(ICON_DIR)/msnap.svg"; \
+	} > $(MANIFEST)
 	@echo "Manifest written to $(MANIFEST)"
 
 uninstall:
@@ -85,7 +74,7 @@ uninstall:
 	@sed 's|/[^/]*$$||' $(MANIFEST) | sort -ru | \
 		xargs -I{} rmdir --ignore-fail-on-non-empty {} 2>/dev/null || true
 	@rm -f $(MANIFEST)
-	@rmdir --ignore-fail-on-non-empty $(DESTDIR)$(LOCALSTATEDIR)/msnap 2>/dev/null || true
+	@rmdir --ignore-fail-on-non-empty $(DESTDIR)$(STATEDIR)/msnap 2>/dev/null || true
 	@echo "Done."
 
 clean:
