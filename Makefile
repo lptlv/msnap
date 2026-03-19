@@ -26,7 +26,8 @@ build:
 	sed "s|@GUI_PATH@|$(DATADIR)/msnap/gui|g" assets/msnap.desktop.in | \
 		sed "s|@ICON_PATH@|$(ICON_PATH)|g" > msnap.desktop
 	sed "s|@BIN_PATH@|$(BINDIR)/msnap|g" gui/Config.qml > Config.qml.build
-	sed "s|@GUI_PATH@|$(DATADIR)/msnap/gui|g" cli/msnap > msnap.build
+	sed "s|@GUI_PATH@|$(DATADIR)/msnap/gui|g" cli/msnap | \
+		sed "s|@MANIFEST_PATH@|$(STATEDIR)/msnap/.manifest|g" > msnap.build
 
 install: build
 	@echo "Installing msnap..."

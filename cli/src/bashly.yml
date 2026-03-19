@@ -98,3 +98,22 @@ commands:
   help: Launch the graphical interface
   dependencies:
     - qs
+
+- name: update
+  help: Update msnap to the latest version
+  dependencies:
+    - curl
+    - tar
+    - git
+  flags:
+  - long: --check
+    short: -c
+    help: Check for updates without installing
+  - long: --force
+    short: -f
+    help: Reinstall even if already up to date
+  - long: --version
+    short: -V
+    arg: VERSION
+    help: Install a specific version (e.g. x.x.x)
+    conflicts: [--check]
