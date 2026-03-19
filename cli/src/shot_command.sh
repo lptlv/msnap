@@ -1,3 +1,8 @@
+if pgrep -x "slurp" >/dev/null || pgrep -x "wayfreeze" >/dev/null; then
+  echo "Screenshot selection already in progress." >&2
+  exit 0
+fi
+
 if [[ ${args[--only-copy]} ]]; then
   filepath="$(mktemp -t msnap-XXXXXX.png)"
   find "$(dirname "$filepath")" -maxdepth 1 -name "msnap-*.png" -mmin +5 -delete 2>/dev/null &
