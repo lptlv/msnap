@@ -340,6 +340,7 @@ PanelWindow {
         Keys.onBacktabPressed: root.isShot = !root.isShot
         Keys.onReturnPressed:  root.executeAction()
         Keys.onEnterPressed:   root.executeAction()
+        Keys.onSpacePressed:   root.executeAction()
         Keys.onEscapePressed: {
             if (root.captureMode === "region" && regionSelector.hasSelection) {
                 regionSelector.clear()
