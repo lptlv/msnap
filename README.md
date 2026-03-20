@@ -1,8 +1,8 @@
-# msnap
+# <img src="assets/icons/msnap.svg" width="28" height="28" alt="mango Logo" style="vertical-align: middle;"> msnap
 
-Screenshot and screencast utility for [mangowm](https://github.com/mangowm/mango).
+Screenshot and screencast utility for [mango](https://github.com/mangowm/mango).
 
-https://github.com/user-attachments/assets/53a4c616-3a6f-4400-ae9c-a15e277e710f
+https://github.com/user-attachments/assets/99f3e8dc-77af-43d6-9601-2bddf4e31675
 
 ---
 
@@ -24,23 +24,11 @@ https://github.com/user-attachments/assets/53a4c616-3a6f-4400-ae9c-a15e277e710f
 
 ## Installation
 
-### User install
-
 ```sh
-git clone https://github.com/atheeq-rhxn/msnap.git
-cd msnap
-make install PREFIX=~/.local SYSCONFDIR=~/.config
+curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/msnap/main/install.sh | bash
 ```
 
-> Ensure `~/.local/bin` is in your `$PATH`.
-
-### System install
-
-```sh
-git clone https://github.com/atheeq-rhxn/msnap.git
-cd msnap
-sudo make install PREFIX=/usr
-```
+The script will prompt for **user** or **system-wide** installation.
 
 ### NixOS install
 
@@ -80,10 +68,24 @@ Or for a standalone try without installing:
 nix run github:atheeq-rhxn/msnap -- shot
 ```
 
-### Uninstall
+---
 
-```sh
-sudo make uninstall
+## Mango setup
+
+### Keybinds
+
+```ini
+bind=none,Print,spawn,msnap gui
+bind=SHIFT,Print,spawn_shell,msnap shot --region
+bind=ALT,Print,spawn_shell,msnap cast --toggle --region
+```
+
+### Layer rule
+
+To prevent the GUI from being animated or blurred:
+
+```ini
+layerrule = layer_name:msnap, noanim:1, noblur:1
 ```
 
 ---
@@ -129,19 +131,6 @@ msnap cast [OPTIONS]   # record the screen
 
 ---
 
-## Updating
-
-```sh
-msnap update            # update to latest
-msnap update --check    # check without installing
-msnap update --version x.x.x # install specific version
-msnap update --force    # reinstall current version
-```
-
-> NOTE: Not supported for Nix-managed installs — use `nix flake update` instead.
-
----
-
 ## GUI
 
 Launch from your application launcher, or directly:
@@ -152,19 +141,47 @@ msnap gui
 
 ### Keyboard shortcuts
 
+#### Mode selection
 | Key | Action |
 |-----|--------|
-| `H` / `L` | Navigate capture modes |
+| `S` | Screenshot mode |
+| `V` | Recording mode |
 | `J` / `K` | Switch between Screenshot and Record |
 | `Tab` | Toggle mode |
-| `Enter` / `Space` | Execute |
+
+#### Capture target
+| Key | Action |
+|-----|--------|
+| `H` / `L` | Navigate capture targets |
+| `←` / `→` | Navigate capture targets |
+| `R` | Region selection |
+| `W` | Active window *(screenshot only)* |
+| `F` | Full screen |
+
+#### Options
+| Key | Action |
+|-----|--------|
 | `P` | Toggle pointer *(screenshot only)* |
 | `E` | Toggle annotation *(screenshot only)* |
-| `A` | Toggle system audio *(recording only)* |
 | `M` | Toggle microphone *(recording only)* |
-| `Escape` | Close / stop recording |
+| `A` | Toggle system audio *(recording only)* |
 
-While recording, a red indicator appears in the top-right corner — click it to stop.
+#### Execution
+| Key | Action |
+|-----|--------|
+| `Enter` / `Space` | Execute capture |
+| `Escape` | Clear selection / Close |
+
+### Mouse interactions
+
+| Action | Result |
+|--------|--------|
+| Drag on background | Create new region selection |
+| Click inside selection | Start moving selection |
+| Click on corner handles | Resize selection |
+| Right-click | Clear selection or cancel |
+| Hover recording pill | Expand to show timer + stop button |
+| Click recording pill | Stop recording |
 
 ---
 
@@ -176,15 +193,19 @@ Config files live in `$XDG_CONFIG_HOME/msnap/` (default: `~/.config/msnap/`).
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `shot_output_dir` | `~/Pictures/Screenshots` | Screenshot save directory |
+| `shot_output_dir` | `$XDG_PICTURES_DIR/Screenshots` or `~/Pictures/Screenshots` | Screenshot save directory |
 | `shot_filename_pattern` | `%Y%m%d%H%M%S.png` | Screenshot filename pattern |
 | `shot_pointer_default` | `false` | Include pointer by default |
-| `cast_output_dir` | `~/Videos/Screencasts` | Recording save directory |
+| `cast_output_dir` | `$XDG_VIDEOS_DIR/Screencasts` or `~/Videos/Screencasts` | Recording save directory |
 | `cast_filename_pattern` | `%Y%m%d%H%M%S.mp4` | Recording filename pattern |
+
+> **Filename patterns** support standard `date` format tokens (`%Y`, `%m`, `%d`, `%H`, `%M`, `%S`, etc.)
 
 ### `gui.conf`
 
-Controls GUI theme (colors, accents, alphas) and `quick_capture` behaviour.
+Controls GUI theme (colors, accents, and alphas):
+
+All other options control colors and alpha values for the UI. See the default `gui.conf` for available options.
 
 ### Value precedence
 
@@ -194,6 +215,18 @@ Options resolve in this order (highest first):
 2. `msnap.conf`
 3. XDG env vars (`XDG_PICTURES_DIR`, `XDG_VIDEOS_DIR`)
 4. Built-in defaults
+
+### Notifications
+
+After capturing, notifications provide quick actions:
+
+| Action | Description |
+|--------|-------------|
+| **Open File** | Open the captured file |
+| **Open Folder** | Open the containing folder |
+| **Annotate** | Re-edit in Satty *(screenshot only)* |
+
+Recordings include an auto-generated thumbnail in the notification.
 
 ---
 
@@ -211,18 +244,25 @@ msnap follows the [XDG Base Directory Specification](https://specifications.free
 
 ---
 
-## mango integration
+## Updating
 
-Example keybinds for mango:
-
-```ini
-bind=none,Print,spawn,msnap gui
-bind=SHIFT,Print,spawn_shell,msnap shot --region
-bind=ALT,Print,spawn_shell,msnap cast --toggle --region
+```sh
+msnap update              # update to latest release
+msnap update --git        # update to latest git commit (unreleased)
+msnap update --check      # check for updates without installing
+msnap update --version x.x.x  # install specific version
+msnap update --force      # reinstall current version
 ```
 
-To prevent the GUI from being animated or blurred:
+> NOTE: Not supported for Nix-managed installs — use `nix flake update` instead.
 
-```ini
-layerrule = layer_name:msnap, noanim:1, noblur:1
+---
+
+## Uninstall
+
+```sh
+msnap uninstall        # interactive
+msnap uninstall -f     # skip confirmation
 ```
+
+> Nix-managed installs should use `nix-collect-garbage` or remove from `flake.nix`.
