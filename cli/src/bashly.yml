@@ -99,6 +99,15 @@ commands:
   dependencies:
     - qs
 
+- name: uninstall
+  help: Uninstall msnap
+  dependencies:
+    - rm
+  flags:
+  - long: --force
+    short: -f
+    help: Skip confirmation prompt
+
 - name: update
   help: Update msnap to the latest version
   dependencies:

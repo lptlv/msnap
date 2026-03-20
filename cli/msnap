@@ -26,10 +26,11 @@ msnap_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Take a screenshot\n" "shot  "
-  printf "  %s   Record the screen\n" "cast  "
-  printf "  %s   Launch the graphical interface\n" "gui   "
-  printf "  %s   Update msnap to the latest version\n" "update"
+  printf "  %s   Take a screenshot\n" "shot     "
+  printf "  %s   Record the screen\n" "cast     "
+  printf "  %s   Launch the graphical interface\n" "gui      "
+  printf "  %s   Uninstall msnap\n" "uninstall"
+  printf "  %s   Update msnap to the latest version\n" "update   "
   echo
 
   # :command.long_usage
@@ -207,6 +208,34 @@ msnap_gui_usage() {
   if [[ -n "$long_usage" ]]; then
     # :command.usage_options
     printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+msnap_uninstall_usage() {
+  printf "msnap uninstall - Uninstall msnap\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  msnap uninstall [OPTIONS]\n"
+  printf "  msnap uninstall --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--force, -f"
+    printf "    Skip confirmation prompt\n"
+    echo
 
     # :command.usage_fixed_flags
     printf "  %s\n" "--help, -h"
@@ -675,6 +704,55 @@ msnap_gui_command() {
 }
 
 # :command.function
+msnap_uninstall_command() {
+
+  # src/uninstall_command.sh
+  manifest="@MANIFEST_PATH@"
+  binary_path="${BASH_SOURCE[0]}"
+
+  nix_managed=false
+  [[ "$binary_path" == /nix/store/* ]] && nix_managed=true
+
+  if [[ "$nix_managed" == true ]]; then
+    echo "Error: 'msnap uninstall' is not supported for Nix-managed installations." >&2
+    echo "To uninstall, remove 'msnap' from your Nix flake." >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$manifest" ]]; then
+    echo "Error: No manifest found. Was msnap installed with 'make install'?" >&2
+    exit 1
+  fi
+
+  if [[ -z "${args[--force]:-}" ]]; then
+    file_count=$(wc -l < "$manifest")
+    echo "This will remove $file_count files from your system."
+    read -p "Continue? [y/N] " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      echo "Aborted."
+      exit 0
+    fi
+  fi
+
+  echo "Uninstalling..."
+  removed=0
+  failed=0
+  while IFS= read -r dest; do
+    if [[ -f "$dest" ]]; then
+      rm -f "$dest" && ((removed++)) || ((failed++))
+    fi
+  done < "$manifest"
+  rm -f "$manifest"
+  echo "Removed $removed file(s)."
+
+  rm -f "$manifest" && echo "Removed manifest: $manifest" || echo "Failed to remove manifest: $manifest" >&2
+
+  echo "msnap uninstalled."
+
+}
+
+# :command.function
 msnap_update_command() {
 
   # src/update_command.sh
@@ -853,6 +931,13 @@ parse_requirements() {
       action="gui"
       shift
       msnap_gui_parse_requirements "$@"
+      shift $#
+      ;;
+
+    uninstall)
+      action="uninstall"
+      shift
+      msnap_uninstall_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1386,6 +1471,74 @@ msnap_gui_parse_requirements() {
 }
 
 # :command.parse_requirements
+msnap_uninstall_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        msnap_uninstall_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.dependencies_filter
+  missing_deps=
+  # :dependency.filter
+  if ! command -v rm >/dev/null 2>&1; then
+    printf "missing dependency: rm\n" >&2
+    missing_deps=1
+  else
+    deps['rm']="$(command -v rm | head -n1)"
+  fi
+
+  if [[ -n $missing_deps ]]; then
+    exit 1
+  fi
+
+  # :command.command_filter
+  action="uninstall"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --force | -f)
+
+        # :flag.case_no_arg
+        args['--force']=1
+        shift
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
 msnap_update_parse_requirements() {
   local key
 
@@ -1547,6 +1700,7 @@ run() {
     "shot") msnap_shot_command ;;
     "cast") msnap_cast_command ;;
     "gui") msnap_gui_command ;;
+    "uninstall") msnap_uninstall_command ;;
     "update") msnap_update_command ;;
   esac
 }
