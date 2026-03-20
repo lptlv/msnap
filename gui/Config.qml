@@ -22,10 +22,6 @@ Singleton {
   property color instructionColor: "#ffffff"
   property real instructionAlpha: 0.65
 
-  // Behavior
-  property bool quickCapture: false
-  property bool rememberRegion: true
-
   // Paths
   readonly property string homePath: Quickshell.env("HOME")
 
